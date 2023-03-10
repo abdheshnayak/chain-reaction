@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "preserveSymlinks": true,
+    "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "checkJs": true,
+    "allowJs": true,
+    "baseUrl": ".",
+    "paths": {
+      "@pages/*": ["pages/*"],
+      "@commons/*": ["commons/*"],
+      "@components/*": ["components/*"]
+    }
+  },
+  "include": ["pages", "commons", "components"]
+}

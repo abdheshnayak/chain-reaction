@@ -1,0 +1,54 @@
+extends:
+  - "@madhouselabs/eslint-config-next"
+  # - plugin:react/jsx-runtime
+  - plugin:react/recommended
+  - plugin:prettier/recommended
+
+plugins:
+  - prettier
+  # - prefer-arrow-functions
+
+env:
+  es6: true
+
+settings:
+  import/resolver:
+    jsconfig: 
+      config: jsconfig.json
+    # node: true
+
+rules:
+  # prefer-arrow-functions/prefer-arrow-functions:
+  #   [
+  #     "warn",
+  #     {
+  #       classPropertiesAllowed: false,
+  #       disallowPrototype: true,
+  #       returnStyle: "unchanged",
+  #       singleReturnOnly: true,
+  #     },
+  #   ]
+  # "@ts-ignore": 0
+  # prettier/prettier: 0
+  no-plusplus: 0
+  no-bitwise: 0
+  jsx-a11y/no-static-element-interactions: 0
+  jsx-a11y/click-events-have-key-events: 0
+  allow-named-functions: 0
+  max-classes-per-file: 0
+  import/prefer-default-export: 0
+  react/prop-types: 0
+  react/jsx-props-no-spreading: 0
+  react/react-in-jsx-scope: 0
+  react-hooks/exhaustive-deps: 0
+  jsx-a11y/anchor-is-valid: 0
+  import/order: 1
+  react/button-has-type: 0
+  no-console: 0
+  no-param-reassign: 0
+    # - error
+    # - props: true
+  import/no-unresolved:
+    - error
+    - ignore:
+        - \.svg
