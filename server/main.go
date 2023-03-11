@@ -225,6 +225,7 @@ func main() {
 		component.WithNameFunc(strings.ToLower),
 	)
 
+	http.Handle("/*", http.FileServer(http.Dir("out")))
 	http.Handle("/", http.StripPrefix("/", http.FileServer(http.Dir("out"))))
 
 	nano.Listen(":3250",
