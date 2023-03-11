@@ -232,7 +232,12 @@ const NewStarx = () => {
     encode = params.encode || defaultEncode;
     decode = params.decode || defaultDecode;
 
-    let url = `ws://${host}`;
+    let url;
+    if (host === 'localhost') {
+      url = `ws://${host}`;
+    } else {
+      url = `wss://${host}`;
+    }
     if (port) {
       url += `:${port}`;
     }
