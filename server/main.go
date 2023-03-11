@@ -3,6 +3,8 @@ package main
 import (
 	// "bytes"
 	// "log"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"strings"
@@ -45,13 +47,15 @@ type (
 
 	// User message will be received when new user join room
 	User struct {
-		Email string `json:"email"`
-		Name  string `json:"name"`
+		Email       string `json:"email"`
+		Name        string `json:"name"`
+		Uid         string `json:"uid"`
+		IsAnonymous bool   `json:"isAnonymous"`
 	}
 
 	// AllMembers contains all members uid
 	AllMembers struct {
-		Members map[int64]string `json:"members"`
+		Members map[int64]User `json:"members"`
 	}
 
 	// JoinResponse represents the result of joining room
@@ -62,8 +66,7 @@ type (
 )
 
 const (
-	testRoomID = 1
-	roomIDKey  = "ROOM_ID"
+	roomIDKey = "ROOM_ID"
 )
 
 func NewRoomManager() *RoomManager {
@@ -84,6 +87,11 @@ func (mgr *RoomManager) AfterInit() {
 		room.group.Broadcast("onMembers",
 			&AllMembers{Members: getMembersOfRoom(room)},
 		)
+
+		if len(room.group.Members()) == 0 {
+			delete(mgr.rooms, s.Value("roomId").(int))
+		}
+
 	})
 
 	// mgr.timer = scheduler.NewTimer(time.Minute, func() {
@@ -93,17 +101,27 @@ func (mgr *RoomManager) AfterInit() {
 	// 	}
 	// })
 }
-func getMembersOfRoom(room *Room) map[int64]string {
-	maps := map[int64]string{}
+func getMembersOfRoom(room *Room) map[int64]User {
+	maps := map[int64]User{}
 	for _, v := range room.group.Members() {
 		s2, err := room.group.Member(v)
 		if err == nil && s2.HasKey("email") {
 			email := s2.Value("email")
-			maps[v] = email.(string)
+			maps[v] = User{
+				Email:       getMd5(email.(string)),
+				Name:        s2.Value("name").(string),
+				Uid:         getMd5(s2.Value("uid").(string) + "@gmail.com"),
+				IsAnonymous: s2.Value("isAnonymous").(bool),
+			}
 		}
 	}
 
 	return maps
+}
+
+func getMd5(s string) string {
+	hash := md5.Sum([]byte(s))
+	return hex.EncodeToString(hash[:])
 }
 
 // Join room
@@ -115,21 +133,44 @@ func (mgr *RoomManager) Join(s *session.Session, msg []byte) error {
 	}
 
 	// NOTE: join test room only in demo
-	room, found := mgr.rooms[testRoomID]
-	if !found {
+	var room *Room
+	if len(mgr.rooms) == 0 {
+		rId := 0
 		room = &Room{
-			group: nano.NewGroup(fmt.Sprintf("room-%d", testRoomID)),
+			group: nano.NewGroup(fmt.Sprintf("room-%d", rId)),
 		}
-		mgr.rooms[testRoomID] = room
+		mgr.rooms[rId] = room
+	} else {
+		room = mgr.rooms[len(mgr.rooms)-1]
 	}
+
+	// limit size
+	if false && len(room.group.Members()) >= 5 {
+		rId := len(mgr.rooms)
+		room = &Room{
+			group: nano.NewGroup(fmt.Sprintf("room-%d", rId)),
+		}
+
+		mgr.rooms[rId] = room
+	}
+
+	s.Set("roomId", len(mgr.rooms)-1)
 
 	fakeUID := s.ID() //just use s.ID as uid !!!
 	s.Bind(fakeUID)   // binding session uids.Set(roomIDKey, room)
 	s.Set(roomIDKey, room)
 	s.Set("email", usr.Email)
+	s.Set("name", usr.Name)
+	s.Set("uid", usr.Uid)
+	s.Set("isAnonymous", usr.IsAnonymous)
 
 	allMembers := getMembersOfRoom(room)
-	allMembers[fakeUID] = usr.Email
+	allMembers[fakeUID] = User{
+		Email:       getMd5(usr.Email),
+		Name:        usr.Name,
+		Uid:         getMd5(usr.Uid + "@gmail.com"),
+		IsAnonymous: usr.IsAnonymous,
+	}
 
 	room.group.Broadcast("onMembers", &AllMembers{Members: allMembers})
 	s.Push("onMembers", &AllMembers{Members: allMembers})
@@ -184,15 +225,16 @@ func main() {
 		component.WithNameFunc(strings.ToLower),
 	)
 
+	http.Handle("/", http.StripPrefix("/", http.FileServer(http.Dir("out"))))
+
 	nano.Listen(":3250",
 		nano.WithIsWebsocket(true),
 		nano.WithCheckOriginFunc(func(_ *http.Request) bool { return true }),
-		nano.WithWSPath("/nano"),
+		nano.WithWSPath("/server"),
 		nano.WithDebugMode(),
 		nano.WithSerializer(json.NewSerializer()), // override default serializer
 		nano.WithComponents(components),
 		nano.WithHeartbeatInterval(time.Second),
 		// nano.WithLogger(log.New(&bytes.Buffer{}, "hi", log.Flags())),
 	)
-
 }

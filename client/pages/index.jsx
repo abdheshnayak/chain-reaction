@@ -1,95 +1,139 @@
-import Container from '@commons/components/atom/container';
-import { useState } from 'react';
-import NonSSRWrapper from '@commons/helpers/no-ssr';
+import AuthComponents, {
+  userContext,
+} from '@commons/components/compounds/authenticated-components';
+import { useContext, useEffect, useState } from 'react';
+import Header1 from '@commons/components/atom/header1';
+import { ContainerXl } from '@commons/components/atom/container';
+import BounceIt from '@commons/components/atom/bounce-it';
 import { useStarx } from '@commons/helpers/use-starx';
 import { configs } from '@commons/config/config';
 
-const H = () => {
-  const [name, setName] = useState(`guest${Date.now()}`);
-  const [content, setContent] = useState('');
-  const [messages, setMessages] = useState([]);
-  const [members, setMembers] = useState(0);
-
-  const onMessage = (msg) => {
-    setMessages((s) => [...s, msg]);
-  };
-
-  const join = (x, data) => {
-    if (data.code === 0) {
-      setMessages((s) => [...s, { name: 'system', content: data.result }]);
-
-      x.on('onMessage', onMessage);
-    }
-  };
-
+const PChild = () => {
+  const { user } = useContext(userContext);
+  const [members, setMembers] = useState({});
+  const [messages, setMessage] = useState({});
   const onNewUser = (data) => {
-    setMessages((s) => [...s, { name: 'system', content: data.content }]);
+    console.log('New user', data);
   };
 
   const onMembers = (data) => {
-    setMembers((data.members || [0]).join(', '));
+    setMembers(data?.members);
+  };
+
+  const join = (x) => {
+    x.on('onMessage', (d) => {
+      if (d?.id) {
+        setMessage((s) => ({ ...s, [d.id]: d.content }));
+      }
+    });
   };
 
   const starx = useStarx({
     host: configs.host,
     port: configs.port,
-    path: '/nano',
+    path: configs.path,
     onInit: (x) => {
       console.log('initialized');
       x.on('onNewUser', onNewUser);
       x.on('onMembers', onMembers);
-      x.request('room.join', { hello: 'world' }, (data) => {
-        join(x, data);
-      });
+      x.request(
+        'room.join',
+        {
+          email: user.email,
+          name: user.displayName || 'Guest User',
+          isAnonymous: user.isAnonymous,
+          uid: user.uid,
+        },
+        (_) => {
+          join(x);
+        }
+      );
     },
   });
 
-  const sendMessage = (e) => {
-    e.preventDefault();
+  const [content, setContent] = useState('');
 
-    starx.notify('room.message', {
-      name,
-      content,
-    });
-    setContent('');
+  const sendMessage = () => {
+    if (starx) {
+      try {
+        starx.notify('room.message', {
+          content,
+          email: user.email,
+        });
+      } catch (err) {
+        console.log(err);
+      }
+    }
   };
 
-  return (
-    <Container className="py-6">
-      <div> {members} members</div>
+  useEffect(() => {
+    sendMessage();
+  }, [content]);
 
-      <div className="font-serif">
-        {messages.map((msg) => {
-          return (
-            // eslint-disable-next-line react/jsx-key
-            <div key={msg.name + msg.content}>
-              [<span className="text-red-500">{msg.name}</span>]:{msg.content}
+  return (
+    <div className="flex flex-col gap-6">
+      <Header1 user={user} />
+      <ContainerXl>
+        <div className="flex flex-col gap-6">
+          <div className="flex gap-6">
+            <form className="flex-1">
+              <textarea
+                className="bg-transparent border border-gray-500 rounded-md max-w-screen-sm min-h-[10rem] w-full"
+                onChange={(e) => setContent(e.target.value)}
+              />
+              <button type="submit">submit</button>
+            </form>
+            <div className="flex gap-2 justify-end flex-wrap flex-1">
+              {Object.keys(members).map((i) => {
+                return (
+                  <BounceIt title={members[i].name} key={i}>
+                    <img
+                      src={`https://www.gravatar.com/avatar/${
+                        members[i].isAnonymous
+                          ? members[i].uid
+                          : members[i].email
+                      }?d=wavatar`}
+                      alt="profile"
+                      className="w-6 rounded-full"
+                    />
+                  </BounceIt>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
-      <form
-        onSubmit={sendMessage}
-        className="flex items-center gap-3 p-4 border justify-around my-4"
-      >
-        <div>{name}</div>
-        <input
-          value={content || ''}
-          onChange={(e) => setContent(e.target.value)}
-          className="border bg-gray-200 px-3 py-1 rounded-md bg-transparent"
-        />
-        <button type="submit" className="bg-blue-800 px-3 py-1">
-          send
-        </button>
-      </form>
-    </Container>
+          </div>
+          <div className="flex flex-col gap-2">
+            {Object.keys(members).map((i) => {
+              return (
+                <div key={i} className="flex flex-col gap-2 border p-3">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={`https://www.gravatar.com/avatar/${
+                        members[i].isAnonymous
+                          ? members[i].uid
+                          : members[i].email
+                      }?d=wavatar`}
+                      alt="profile"
+                      className="w-6 rounded-full"
+                    />
+                    <span>{members[i].name}</span>
+                  </div>
+                  <span>{messages[i]}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </ContainerXl>
+    </div>
   );
 };
 
-const Home = () => (
-  <NonSSRWrapper>
-    <H />
-  </NonSSRWrapper>
-);
+const Profile = () => {
+  return (
+    <AuthComponents>
+      <PChild />
+    </AuthComponents>
+  );
+};
 
-export default Home;
+export default Profile;

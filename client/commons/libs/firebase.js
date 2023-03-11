@@ -1,12 +1,11 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { getAnalytics } from 'firebase/analytics';
-import { getStorage } from 'firebase/storage';
-import { getFirestore } from 'firebase/firestore';
-import {
-  getAuth,
-  browserSessionPersistence,
-  setPersistence,
-} from 'firebase/auth';
+// import { getAnalytics } from 'firebase/analytics';
+// import { getStorage } from 'firebase/storage';
+// import { getFirestore } from 'firebase/firestore';
+import // getAuth,
+// browserSessionPersistence,
+// setPersistence,
+'firebase/auth';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyDoLMtJDZi9BhHJssaApAhOfGnfh2cFVEY',

@@ -1,6 +1,6 @@
 import { useRouter } from 'next/router';
 import NonSSRWrapper from '@commons/helpers/no-ssr';
-import { createContext, useState } from 'react';
+import { createContext, useEffect, useState } from 'react';
 // @ts-ignore
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
@@ -11,16 +11,18 @@ const AC = ({ children = null }) => {
   const [user, setUser] = useState(null);
   const [userSynced, setUserSynced] = useState(false);
   const router = useRouter();
-  onAuthStateChanged(auth, (u) => {
-    if (u) {
-      console.log('got user', u);
-      setUser(u);
-    } else {
-      console.log('no user');
-      router.replace('/auth/login');
-    }
-    setUserSynced(true);
-  });
+  useEffect(() => {
+    onAuthStateChanged(auth, (u) => {
+      if (u) {
+        console.log('got user');
+        setUser(u);
+      } else {
+        console.log('no user');
+        router.replace('/auth/login');
+      }
+      setUserSynced(true);
+    });
+  }, []);
   return (
     <userContext.Provider value={{ user }}>
       {user && children}
