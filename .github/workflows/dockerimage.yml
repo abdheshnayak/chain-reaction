@@ -1,0 +1,28 @@
+name: Docker Build/Publish Image 
+on:  
+  push:    
+    branches: [ main ]  
+jobs:   
+  build:    
+    runs-on: ubuntu-22.04    
+    env:      
+      DOCKER_REGISTRY: registry.gitlab.com      
+      DOCKER_IMAGE: abdheshnayak/registry      
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}  
+      DOCKER_TARGET_PLATFORM: linux/arm64                 
+    steps:    
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2    
+    - name: Docker Login      
+      if: success()      
+      run: |        
+        echo "${DOCKER_PASSWORD}" | docker login ${DOCKER_REGISTRY} --username "${DOCKER_USERNAME}" --password-stdin          
+    - name: Run Buildx (push image)      
+      if: success()      
+      run: |        
+        docker build --platform ${DOCKER_TARGET_PLATFORM} --tag ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:multi-sample --file ./Dockerfile . &&  docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:multi-sample
