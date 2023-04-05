@@ -45,6 +45,11 @@ type (
 		Id      int64  `json:"id"`
 	}
 
+	// UserMessage represents a message that user sent
+	RoomBrodCast struct {
+		RoomCount int `json:"roomCount"`
+	}
+
 	// User message will be received when new user join room
 	User struct {
 		Email       string `json:"email"`
@@ -143,6 +148,8 @@ func (mgr *RoomManager) Join(s *session.Session, msg []byte) error {
 	} else {
 		room = mgr.rooms[len(mgr.rooms)-1]
 	}
+
+	// room.group.Broadcast(route string, v interface{})
 
 	// limit size
 	if false && len(room.group.Members()) >= 5 {
