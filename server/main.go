@@ -565,6 +565,7 @@ func (mgr *RoomManager) Click(s *session.Session, clickInput *UserClickInput) er
 		if serial == rUser.serial {
 			uo, _ := getUserOfSerial(m, rUser.serial)
 			room.group.Broadcast("onWinner", uo)
+			time.Sleep(time.Second)
 			clearRoom(mgr, room)
 			delete(mgr.rooms, rUser.roomId)
 			return s.Response(&JoinResponse{Result: "success"})
@@ -636,6 +637,82 @@ func (mgr *RoomManager) Start(s *session.Session, msg []byte) error {
 	}
 
 	room.group.Broadcast("onGame", room.Game)
+
+	return s.Response(&JoinResponse{Result: "success"})
+}
+
+// Join room
+func (mgr *RoomManager) JoinAny(s *session.Session, joinInput *JoinInput) error {
+
+	usr := joinInput.User
+
+	// NOTE: join test room only in demo
+
+	rUser, ok := mgr.users[usr.Uid]
+	if !ok {
+		return PushError(s, "no user found")
+	}
+
+	rId := ""
+	for _, r := range mgr.rooms {
+		if len(r.group.Members()) < r.Game.Players {
+			rId = r.Game.ID
+			break
+		}
+	}
+
+	if rId == "" {
+		return mgr.Create(s, &CreateInput{
+			Players: 2,
+			Grid: Grid{
+				Cols: 8,
+				Rows: 12,
+			},
+			User: usr,
+		})
+	}
+
+	fmt.Println("----------------------------", rId, "--------------------")
+
+	room, ok := mgr.rooms[rId]
+	if !ok {
+		return PushError(s, "no Game found with provided GameId")
+	}
+
+	fmt.Println("----------------", room.Game.Players, len(room.group.Members()), room.group.Members())
+
+	if room.Game.Players <= len(getMembersOfRoom(mgr.users, room)) {
+		return PushError(s, "game already full")
+	}
+
+	mgr.users[usr.Uid] = &RoomUser{
+		roomId:   rId,
+		userId:   rUser.userId,
+		isOnline: true,
+		serial:   len(getMembersOfRoom(mgr.users, room)),
+	}
+
+	landRoom := mgr.rooms[LANDING]
+
+	room.group.Add(s) // add session to group
+	landRoom.group.Leave(s)
+
+	allMembers := getMembersOfRoom(mgr.users, room)
+
+	room.group.Broadcast("onMembers", &AllMembers{Members: allMembers})
+	landRoom.group.Broadcast("onMembers", &AllMembers{Members: getMembersOfRoom(mgr.users, landRoom)})
+
+	s.Push("onMembers", &AllMembers{Members: allMembers})
+
+	s.Push("onGame", room.Game)
+
+	// notify others
+	room.group.Broadcast("onNewUser", joinInput)
+	// new user join group
+
+	if len(room.group.Members()) == room.Game.Players {
+		s.Push("onGameStarted", room.Game)
+	}
 
 	return s.Response(&JoinResponse{Result: "success"})
 }
@@ -731,25 +808,12 @@ func (mgr *RoomManager) Exit(s *session.Session, msg []byte) error {
 		return nil
 	}
 
-	if roomIDKey == LANDING {
-		return nil
-	}
-
 	uid := s.Value("uid").(string)
-
 	room := s.Value(roomIDKey).(*Room)
 	room.group.Leave(s)
 
-	lroom := mgr.rooms[LANDING]
-	lroom.group.Add(s)
+	delete(mgr.users, uid)
 
-	mgr.users[uid]=  &RoomUser{
-		roomId:   roomIDKey,
-		userId:   0,
-		isOnline: true,
-		serial:   0,
-		loast:    false,
-	}
 
 	room.group.Broadcast("onMembers",
 		&AllMembers{Members: getMembersOfRoom(mgr.users, room)},

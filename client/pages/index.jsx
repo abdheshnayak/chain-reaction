@@ -8,6 +8,7 @@ import { configs } from '@commons/config/config';
 import UserDp from '@commons/components/atom/user-dp';
 import {
   CreateGame,
+  JoinAny,
   JoinGame,
 } from '@commons/components/compounds/create-game';
 import { useStarx } from '@commons/helpers/use-starx';
@@ -88,7 +89,8 @@ const PChild = () => {
   const exit = () => {
     if (starx) {
       try {
-        starx.notify('room.close', {});
+        starx.request('room.exit', {});
+        setCurrentGame(null);
       } catch (err) {
         console.log(err);
       }
@@ -103,12 +105,13 @@ const PChild = () => {
       <ContainerXl>
         {gameComplete && (
           <div>
-            <Button onClick={()=>router.reload()}>Exit</Button>
+            <Button onClick={exit}>Exit</Button>
           </div>
         )}
         <div>
           <div className="flex flex-col gap-3">
             <div className="flex justify-between">
+              {currentGame && <Button onClick={exit}>Exit</Button>}
               {currentGame && (
                 <div className="flex items-center gap-3">
                   <div>
@@ -158,6 +161,9 @@ const PChild = () => {
               <JoinGame {...{ starx, onNewUser, onGameId, onMembers }} />
               <span>OR</span>
               <CreateGame {...{ starx, onNewUser, onGameId, onMembers }} />
+
+              <span>OR</span>
+              <JoinAny {...{ starx, onNewUser, onGameId, onMembers }} />
             </div>
           </div>
         )}

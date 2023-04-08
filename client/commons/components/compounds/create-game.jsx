@@ -3,6 +3,7 @@ import { useContext } from 'react';
 import useForm from '@commons/hooks/use-form';
 import yup from '@commons/helpers/yup';
 import classNames from 'classnames';
+import { Button } from '@pages/auth/login';
 
 const Input = ({ className = '', ...etc }) => {
   return (
@@ -13,6 +14,29 @@ const Input = ({ className = '', ...etc }) => {
       )}
       {...etc}
     />
+  );
+};
+
+export const JoinAny = ({ starx }) => {
+  const { user } = useContext(userContext);
+
+  const join = () => {
+    starx.request('room.joinany', {
+      user: {
+        email: user.email,
+        name: user.displayName || 'Guest User',
+        isAnonymous: user.isAnonymous,
+        uid: user.uid,
+      },
+    });
+  };
+
+  return (
+    <div className="flex gap-3 items-center">
+      <Button onClick={join} className="px-2 py-1">
+        Join Any
+      </Button>
+    </div>
   );
 };
 
@@ -46,9 +70,9 @@ export const JoinGame = ({ starx }) => {
         onChange={handleChange('gameId')}
       />
 
-      <button className="px-2 py-1" type="submit">
+      <Button className="px-2 py-1" type="submit">
         Join
-      </button>
+      </Button>
     </form>
   );
 };
@@ -89,7 +113,7 @@ export const CreateGame = ({ starx }) => {
         onChange={handleChange('players')}
         placeholder="players count"
       />
-      <button type="submit">New Game</button>
+      <Button type="submit">New Game</Button>
     </form>
   );
 };
