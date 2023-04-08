@@ -97,7 +97,6 @@ const PChild = () => {
     }
   };
 
-  const router = useRouter();
 
   return (
     <div className="flex flex-col gap-6">

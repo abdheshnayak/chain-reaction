@@ -1,5 +1,5 @@
 export const configs = {
-  host: 'localhost',
-  port: 3250,
+  host: 'sample-game.server.anayak.com.np',
+  port: null,
   path: '/server',
 };

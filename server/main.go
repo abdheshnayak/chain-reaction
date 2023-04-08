@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"strings"
@@ -814,7 +816,6 @@ func (mgr *RoomManager) Exit(s *session.Session, msg []byte) error {
 
 	delete(mgr.users, uid)
 
-
 	room.group.Broadcast("onMembers",
 		&AllMembers{Members: getMembersOfRoom(mgr.users, room)},
 	)
@@ -869,6 +870,6 @@ func main() {
 		nano.WithSerializer(json.NewSerializer()), // override default serializer
 		nano.WithComponents(components),
 		nano.WithHeartbeatInterval(time.Second),
-		// nano.WithLogger(log.New(&bytes.Buffer{}, "hi", log.Flags())),
+		nano.WithLogger(log.New(&bytes.Buffer{}, "hi", log.Flags())),
 	)
 }
