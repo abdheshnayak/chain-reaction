@@ -725,6 +725,39 @@ func clearRoom(mgr *RoomManager, room *Room) {
 	}
 }
 
+func (mgr *RoomManager) Exit(s *session.Session, msg []byte) error {
+
+	if !s.HasKey(roomIDKey) {
+		return nil
+	}
+
+	if roomIDKey == LANDING {
+		return nil
+	}
+
+	uid := s.Value("uid").(string)
+
+	room := s.Value(roomIDKey).(*Room)
+	room.group.Leave(s)
+
+	lroom := mgr.rooms[LANDING]
+	lroom.group.Add(s)
+
+	mgr.users[uid]=  &RoomUser{
+		roomId:   roomIDKey,
+		userId:   0,
+		isOnline: true,
+		serial:   0,
+		loast:    false,
+	}
+
+	room.group.Broadcast("onMembers",
+		&AllMembers{Members: getMembersOfRoom(mgr.users, room)},
+	)
+
+	return nil
+}
+
 func (mgr *RoomManager) Close(s *session.Session, msg []byte) error {
 
 	if !s.HasKey(roomIDKey) {
