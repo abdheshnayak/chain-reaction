@@ -31,7 +31,7 @@ export default function Game({ currentGame, starx }) {
           <div className="flex flex-col min-h-screen gap-6 p-4">
             <div className="flex justify-end gap-6">
               {mainUser.uid === uid && (
-                <div className="w-8 h-8">
+                <div className="w-6 h-6">
                   <Ball
                     {...{
                       count: 1,

@@ -1,6 +1,7 @@
+import classNames from 'classnames';
 import { motion } from 'framer-motion';
 
-function Ball({ color, id, count }) {
+function Ball({ color, id, balls }) {
   return (
     <motion.div
       layoutId={id}
@@ -8,7 +9,8 @@ function Ball({ color, id, count }) {
         ease: 'linear',
         duration: 0.2,
       }}
-      className="flex justify-center items-center relative"
+      className={classNames('flex justify-center items-center relative', {
+      })}
     >
       <motion.div
       // initial={{ rotate: 0, scale: count > 0 ? 1.5 : 1 }}

@@ -14,7 +14,6 @@ import {
 import { useStarx } from '@commons/helpers/use-starx';
 import { toast } from 'react-toastify';
 import Game from '@commons/components/compounds/game';
-import { useRouter } from 'next/router';
 import { Button } from './auth/login';
 
 const PChild = () => {
@@ -96,7 +95,6 @@ const PChild = () => {
       }
     }
   };
-
 
   return (
     <div className="flex flex-col gap-6">

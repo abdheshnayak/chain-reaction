@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/lonng/nano"
@@ -78,12 +79,13 @@ type (
 	}
 
 	Game struct {
-		ID      string        `json:"id"`
-		Players int           `json:"players"`
-		Data    [][]GameBlock `json:"data"`
-		Grid    Grid          `json:"grid"`
-		Started bool          `json:"started"`
-		User    UserOutput    `json:"user"`
+		ID         string        `json:"id"`
+		Players    int           `json:"players"`
+		Data       [][]GameBlock `json:"data"`
+		Grid       Grid          `json:"grid"`
+		Started    bool          `json:"started"`
+		User       UserOutput    `json:"user"`
+		Processing bool          `json:"processing"`
 	}
 
 	UserInput struct {
@@ -347,106 +349,124 @@ func (mgr *RoomManager) Create(s *session.Session, createInput *CreateInput) err
 	return s.Response(&JoinResponse{Result: "success"})
 }
 
-func addBall(room *Room, row, col int, ball Ball, rUser *RoomUser) {
+func addBall(room *Room, row, col, rw, cl int, rUser *RoomUser, wg *sync.WaitGroup) {
 
+	time.Sleep(time.Millisecond * 200)
+	b := room.Game.Data[row][col].Balls
+	if len(b) == 0 {
+		wg.Done()
+		return
+	}
+	ball, balls := b[len(b)-1], b[:len(b)-1]
+
+	room.Game.Data[row][col] = GameBlock{
+		User:  rUser.serial,
+		Balls: balls,
+	}
+
+	fmt.Println("started:", row, col)
 	executeBlock(room, &UserClickInput{
-		Row: row,
-		Col: col,
+		Row: row + rw,
+		Col: col + cl,
 	}, rUser, &ball)
+	fmt.Println("done:", row, col)
 
+	wg.Done()
 }
 
 func doWithCorner(room *Room, row, col int, rUser *RoomUser) {
 	data := room.Game.Data
 
-	balls := data[row][col].Balls
-
 	gridRow := len(data)
 	gridCol := len(data[0])
 
-	a, b := balls[0], balls[1]
+	// room.Game.Data[row][col] = GameBlock{
+	// 	User:  999,
+	// 	Balls: []Ball{},
+	// }
 
-	room.Game.Data[row][col] = GameBlock{
-		User:  999,
-		Balls: []Ball{},
-	}
+	var wg sync.WaitGroup
+
+	wg.Add(2)
 
 	if row == 0 {
-		addBall(room, row+1, col, a, rUser)
+		go addBall(room, row, col, 1, 0, rUser, &wg)
 	} else if row == gridRow-1 {
-		addBall(room, row-1, col, a, rUser)
+		go addBall(room, row, col, -1, 0, rUser, &wg)
 	}
 
 	if col == 0 {
-		addBall(room, row, col+1, b, rUser)
+		go addBall(room, row, col, 0, 1, rUser, &wg)
 	} else if col == gridCol-1 {
-		addBall(room, row, col-1, b, rUser)
+		go addBall(room, row, col, 0, -1, rUser, &wg)
 	}
 
+	wg.Wait()
 }
 
 func doWithSide(room *Room, row, col int, rUser *RoomUser) {
 	data := room.Game.Data
 
-	balls := data[row][col].Balls
-
 	gridRow := len(data)
 	gridCol := len(data[0])
 
-	a, b, c := balls[0], balls[1], balls[2]
+	// room.Game.Data[row][col] = GameBlock{
+	// 	User:  999,
+	// 	Balls: []Ball{},
+	// }
 
-	room.Game.Data[row][col] = GameBlock{
-		User:  999,
-		Balls: []Ball{},
-	}
+	var wg sync.WaitGroup
+
+	wg.Add(3)
 
 	if row == 0 || row == gridRow-1 {
-		addBall(room, row, col+1, a, rUser)
-		addBall(room, row, col-1, b, rUser)
+		go addBall(room, row, col, 0, 1, rUser, &wg)
+		go addBall(room, row, col, 0, -1, rUser, &wg)
 		// setRCBlock(row, col + 1, (i) => [...i, a], user);
 		// setRCBlock(row, col - 1, (i) => [...i, b], user);
 		if row == 0 {
-			addBall(room, row+1, col, c, rUser)
+			go addBall(room, row, col, 1, 0, rUser, &wg)
 			// setRCBlock(row + 1, col, (i) => [...i, c], user);
 		} else {
-			addBall(room, row-1, col, c, rUser)
+			go addBall(room, row, col, -1, 0, rUser, &wg)
 			// setRCBlock(row - 1, col, (i) => [...i, c], user);
 		}
 	} else if col == 0 || col == gridCol-1 {
-		addBall(room, row+1, col, a, rUser)
-		addBall(room, row-1, col, b, rUser)
+		go addBall(room, row, col, 1, 0, rUser, &wg)
+		go addBall(room, row, col, -1, 0, rUser, &wg)
 		// setRCBlock(row + 1, col, (i) => [...i, a], user);
 		// setRCBlock(row - 1, col, (i) => [...i, b], user);
 
 		if col == 0 {
-			addBall(room, row, col+1, c, rUser)
+			go addBall(room, row, col, 0, 1, rUser, &wg)
 			// setRCBlock(row, col + 1, (i) => [...i, c], user);
 		} else {
-			addBall(room, row, col-1, c, rUser)
+			go addBall(room, row, col, 0, -1, rUser, &wg)
 			// setRCBlock(row, col - 1, (i) => [...i, c], user);
 		}
 	}
+
+	wg.Wait()
 
 }
 
 func doWithCenter(room *Room, row, col int, rUser *RoomUser) {
 
-	data := room.Game.Data
+	// room.Game.Data[row][col] = GameBlock{
+	// 	User:  999,
+	// 	Balls: []Ball{},
+	// }
 
-	balls := data[row][col].Balls
+	var wg sync.WaitGroup
 
-	a, b, c, d := balls[0], balls[1], balls[2], balls[3]
+	wg.Add(4)
 
-	room.Game.Data[row][col] = GameBlock{
-		User:  999,
-		Balls: []Ball{},
-	}
+	go addBall(room, row, col, -1, 0, rUser, &wg)
+	go addBall(room, row, col, 1, 0, rUser, &wg)
+	go addBall(room, row, col, 0, -1, rUser, &wg)
+	go addBall(room, row, col, 0, 1, rUser, &wg)
 
-	addBall(room, row-1, col, a, rUser)
-	addBall(room, row+1, col, b, rUser)
-	addBall(room, row, col-1, c, rUser)
-	addBall(room, row, col+1, d, rUser)
-
+	wg.Wait()
 }
 
 func executeBlock(room *Room, clickInput *UserClickInput, rUser *RoomUser, ball *Ball) {
@@ -496,20 +516,18 @@ func executeBlock(room *Room, clickInput *UserClickInput, rUser *RoomUser, ball 
 	row := clickInput.Row
 	col := clickInput.Col
 
-	// time.Sleep(time.Microsecond * 100)
-	if isCorner(row, col) && len(Game.Balls) == 2 {
+	if isCorner(row, col) && len(Game.Balls) >= 2 {
 		doWithCorner(room, row, col, rUser)
-	} else if isSide(row, col) && len(Game.Balls) == 3 {
+	} else if isSide(row, col) && len(Game.Balls) >= 3 {
 		doWithSide(room, row, col, rUser)
-	} else if isCenter(row, col) && len(Game.Balls) == 4 {
+	} else if isCenter(row, col) && len(Game.Balls) >= 4 {
 		doWithCenter(room, row, col, rUser)
 	}
 
 	room.group.Broadcast("onGame", room.Game)
 
 }
-
-func (mgr *RoomManager) Click(s *session.Session, clickInput *UserClickInput) error {
+func exCall(s *session.Session, clickInput *UserClickInput, mgr *RoomManager) error {
 
 	uid := s.Value("uid").(string)
 
@@ -523,16 +541,25 @@ func (mgr *RoomManager) Click(s *session.Session, clickInput *UserClickInput) er
 		return PushError(s, "no Game found with provided GameId")
 	}
 
+	if room.Game.Processing {
+		return nil
+	} else {
+		room.Game.Processing = true
+	}
+
 	if rUser.loast {
+		room.Game.Processing = false
 		return PushError(s, "you lost")
 	}
 
 	if room.Game.User.Serial != rUser.serial {
+		room.Game.Processing = false
 		return PushError(s, "it's not your turn")
 	}
 
 	Game := room.Game.Data[clickInput.Row][clickInput.Col]
 	if Game.User != rUser.serial && len(Game.Balls) != 0 {
+		room.Game.Processing = false
 		return PushError(s, "it's not your block")
 	}
 
@@ -570,6 +597,7 @@ func (mgr *RoomManager) Click(s *session.Session, clickInput *UserClickInput) er
 			time.Sleep(time.Second)
 			clearRoom(mgr, room)
 			delete(mgr.rooms, rUser.roomId)
+			room.Game.Processing = false
 			return s.Response(&JoinResponse{Result: "success"})
 		}
 
@@ -594,6 +622,7 @@ func (mgr *RoomManager) Click(s *session.Session, clickInput *UserClickInput) er
 
 	uo, err := getUserOfSerial(m, serial)
 	if err != nil {
+		room.Game.Processing = false
 		return PushError(s, err.Error())
 	}
 
@@ -601,7 +630,13 @@ func (mgr *RoomManager) Click(s *session.Session, clickInput *UserClickInput) er
 
 	room.group.Broadcast("onGame", room.Game)
 
+	room.Game.Processing = false
 	return s.Response(&JoinResponse{Result: "success"})
+}
+
+func (mgr *RoomManager) Click(s *session.Session, clickInput *UserClickInput) error {
+	go exCall(s, clickInput , mgr )
+	return nil
 }
 
 func (mgr *RoomManager) Start(s *session.Session, msg []byte) error {
