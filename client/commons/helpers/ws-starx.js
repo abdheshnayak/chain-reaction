@@ -152,7 +152,7 @@ const NewStarx = () => {
 
   const send = (packet) => {
     if (isSocketOpen) {
-      socket.send(packet.buffer);
+      socket?.send(packet.buffer);
     }
   };
 
@@ -238,6 +238,7 @@ const NewStarx = () => {
     } else {
       url = `wss://${host}`;
     }
+
     if (port) {
       url += `:${port}`;
     }

@@ -1,4 +1,4 @@
-// import StarX from '@commons/helpers/use-starx';
+  import 'react-toastify/dist/ReactToastify.css';
 // eslint-disable-next-line no-unused-vars
 import { firebaseInit } from '@commons/libs/firebase';
 import { ToastContainer } from 'react-toastify';

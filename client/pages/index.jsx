@@ -1,31 +1,45 @@
 import AuthComponents, {
   userContext,
 } from '@commons/components/compounds/authenticated-components';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useState } from 'react';
 import Header1 from '@commons/components/atom/header1';
 import { ContainerXl } from '@commons/components/atom/container';
-import BounceIt from '@commons/components/atom/bounce-it';
-import { useStarx } from '@commons/helpers/use-starx';
 import { configs } from '@commons/config/config';
+import UserDp from '@commons/components/atom/user-dp';
+import {
+  CreateGame,
+  JoinGame,
+} from '@commons/components/compounds/create-game';
+import { useStarx } from '@commons/helpers/use-starx';
+import { toast } from 'react-toastify';
+import Game from '@commons/components/compounds/game';
+import { useRouter } from 'next/router';
+import { Button } from './auth/login';
 
 const PChild = () => {
   const { user } = useContext(userContext);
+  const [currentGame, setCurrentGame] = useState(null);
+
+  const [gameComplete, setGameComplete] = useState(false);
+
   const [members, setMembers] = useState({});
-  const [messages, setMessage] = useState({});
   const onNewUser = (data) => {
-    console.log('New user', data);
+    // console.log('New user', data);
+  };
+
+  const onWinner = (data) => {
+    toast.success('win');
+    setGameComplete(true);
+  };
+
+  const onGameId = (data) => {
+    // console.log(data);
+    setCurrentGame(data);
   };
 
   const onMembers = (data) => {
+    // console.log(data);
     setMembers(data?.members);
-  };
-
-  const join = (x) => {
-    x.on('onMessage', (d) => {
-      if (d?.id) {
-        setMessage((s) => ({ ...s, [d.id]: d.content }));
-      }
-    });
   };
 
   const starx = useStarx({
@@ -33,96 +47,120 @@ const PChild = () => {
     port: configs.port,
     path: configs.path,
     onInit: (x) => {
-      console.log('initialized');
       x.on('onNewUser', onNewUser);
       x.on('onMembers', onMembers);
+      x.on('onGame', onGameId);
+      x.on('onWinner', onWinner);
+      x.on('onError', (data) => toast.error(data));
+
       x.request(
-        'room.join',
+        'room.land',
         {
-          email: user.email,
-          name: user.displayName || 'Guest User',
-          isAnonymous: user.isAnonymous,
-          uid: user.uid,
+          user: {
+            email: user.email,
+            name: user.displayName || 'Guest User',
+            isAnonymous: user.isAnonymous,
+            uid: user.uid,
+          },
         },
-        (_) => {
-          join(x);
+        (i) => {
+          console.log(i, 'here');
+          // join(x);
+
+          // x.on('onGame', onGameId);
+          // x.on('onNewUser', onNewUser);
+          // x.on('onMembers', onMembers);
         }
       );
     },
   });
 
-  const [content, setContent] = useState('');
-
-  const sendMessage = () => {
+  const startGame = () => {
     if (starx) {
       try {
-        starx.notify('room.message', {
-          content,
-          email: user.email,
-        });
+        starx.notify('room.start', {});
       } catch (err) {
         console.log(err);
       }
     }
   };
 
-  useEffect(() => {
-    sendMessage();
-  }, [content]);
+  const exit = () => {
+    if (starx) {
+      try {
+        starx.notify('room.close', {});
+      } catch (err) {
+        console.log(err);
+      }
+    }
+  };
+
+  const router = useRouter();
 
   return (
     <div className="flex flex-col gap-6">
       <Header1 user={user} />
       <ContainerXl>
-        <div className="flex flex-col gap-6">
-          <div className="flex gap-6">
-            <form className="flex-1">
-              <textarea
-                className="bg-transparent border border-gray-500 rounded-md max-w-screen-sm min-h-[10rem] w-full"
-                onChange={(e) => setContent(e.target.value)}
-              />
-              <button type="submit">submit</button>
-            </form>
-            <div className="flex gap-2 justify-end flex-wrap flex-1">
-              {Object.keys(members).map((i) => {
-                return (
-                  <BounceIt title={members[i].name} key={i}>
-                    <img
-                      src={`https://www.gravatar.com/avatar/${
-                        members[i].isAnonymous
-                          ? members[i].uid
-                          : members[i].email
-                      }?d=wavatar`}
-                      alt="profile"
-                      className="w-6 rounded-full"
-                    />
-                  </BounceIt>
-                );
-              })}
+        {gameComplete && (
+          <div>
+            <Button onClick={()=>router.reload()}>Exit</Button>
+          </div>
+        )}
+        <div>
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-between">
+              {currentGame && (
+                <div className="flex items-center gap-3">
+                  <div>
+                    GameId:{' '}
+                    {
+                      // @ts-ignore
+                      currentGame?.id
+                    }
+                  </div>
+                  <div>
+                    Players:{' '}
+                    {
+                      // @ts-ignore
+                      currentGame?.players
+                    }
+                  </div>
+                  <div>
+                    Waiting for :{' '}
+                    {currentGame?.players - Object.keys(members).length} Players
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                {Object.keys(members).map((key) => {
+                  return <UserDp noname key={key} user={members[key]} />;
+                })}
+              </div>
             </div>
           </div>
-          <div className="flex flex-col gap-2">
-            {Object.keys(members).map((i) => {
-              return (
-                <div key={i} className="flex flex-col gap-2 border p-3">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={`https://www.gravatar.com/avatar/${
-                        members[i].isAnonymous
-                          ? members[i].uid
-                          : members[i].email
-                      }?d=wavatar`}
-                      alt="profile"
-                      className="w-6 rounded-full"
-                    />
-                    <span>{members[i].name}</span>
-                  </div>
-                  <span>{messages[i]}</span>
-                </div>
-              );
-            })}
-          </div>
         </div>
+
+        {currentGame ? (
+          <>
+            {/* @ts-ignore */}
+            {currentGame.started ? (
+              <Game currentGame={currentGame} starx={starx} />
+            ) : (
+              currentGame?.players - Object.keys(members).length === 0 && (
+                <Button onClick={startGame}>Start</Button>
+              )
+            )}
+          </>
+        ) : (
+          <div className="flex justify-center py-24">
+            <div className="flex flex-col gap-3">
+              <JoinGame {...{ starx, onNewUser, onGameId, onMembers }} />
+              <span>OR</span>
+              <CreateGame {...{ starx, onNewUser, onGameId, onMembers }} />
+            </div>
+          </div>
+        )}
       </ContainerXl>
     </div>
   );

@@ -1,17 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
-// @ts-ignore
 import {
+  // @ts-ignore
   getAuth,
+  // @ts-ignore
   signOut,
+  // @ts-ignore
   onAuthStateChanged,
+  // @ts-ignore
   setPersistence,
+  // @ts-ignore
   browserLocalPersistence,
+  // @ts-ignore
   signInWithPopup,
+  // @ts-ignore
   GoogleAuthProvider,
+  // @ts-ignore
   signInAnonymously,
 } from 'firebase/auth';
-import useForm from '@commons/hooks/use-form';
-import yup from '@commons/helpers/yup';
 import BounceIt from '@commons/components/atom/bounce-it';
 import { toast } from 'react-toastify';
 import UserDp from '@commons/components/atom/user-dp';
@@ -35,7 +40,7 @@ export default function Home() {
   useMemo(() => {
     onAuthStateChanged(auth, (u) => {
       if (u) {
-        console.log('got user');
+        // console.log('got user');
         setUser(u);
       } else {
         console.log('no user');
