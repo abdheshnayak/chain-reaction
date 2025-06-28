@@ -5,7 +5,7 @@ export const configs =
 //   path: '/server',
 // };
 {
-  host: 'sample-game.server.anayak.com.np',
+  host: 'rcg.server.anayak.com.np',
   port: null,
   path: '/server',
 };
