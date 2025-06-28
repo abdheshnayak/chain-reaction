@@ -1,7 +1,9 @@
 name: Docker Build/Publish Image 
 on:  
   push:    
-    branches: [ main ]  
+    branches:
+      - main
+      - fix/**
 jobs:   
   build:    
     runs-on: ubuntu-22.04    
