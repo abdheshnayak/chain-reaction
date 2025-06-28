@@ -7,7 +7,7 @@ function Ball({ color, id, balls }) {
       layoutId={id}
       transition={{
         ease: 'linear',
-        duration: 0.2,
+        duration: 0.1,
       }}
       className={classNames('flex justify-center items-center relative', {
       })}

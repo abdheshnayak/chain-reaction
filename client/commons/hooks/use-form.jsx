@@ -1,11 +1,10 @@
 import logger from '@commons/helpers/logger';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import { useImmer } from 'use-immer';
 
-function useForm({ initialValues, validationSchema, onSubmit = (_) => {} }) {
-  const [values, setValues] = useImmer(initialValues);
-  const [errors, seterrors] = useImmer({});
+function useForm({ initialValues, validationSchema, onSubmit = (_) => { } }) {
+  const [values, setValues] = useState(initialValues);
+  const [errors, setErrors] = useState({});
 
   const checkIsPresent = useCallback(
     async (path, value) => {
@@ -14,90 +13,73 @@ function useForm({ initialValues, validationSchema, onSubmit = (_) => {} }) {
       try {
         await validationSchema.validate(
           { ...values, [path]: value },
-          {
-            abortEarly: false,
-          }
+          { abortEarly: false }
         );
-        seterrors({});
+        setErrors((prev) => ({ ...prev, [path]: undefined }));
       } catch (err) {
         const res = err.inner.filter((item) => item.path === path);
-        if (res.length === 0)
-          seterrors((d) => {
-            d[path] = undefined;
-          });
-        else {
-          seterrors((d) => {
-            d[path] = res[0].message;
-          });
+        if (res.length === 0) {
+          setErrors((prev) => ({ ...prev, [path]: undefined }));
+        } else {
+          setErrors((prev) => ({ ...prev, [path]: res[0].message }));
         }
       }
     },
-    [validationSchema, errors, seterrors, values]
+    [validationSchema, errors, values]
   );
 
   useEffect(() => {
-    if (Object.keys(errors).length === 0)
-      Object.keys(initialValues || {}).map((key) => {
-        seterrors((d) => {
-          d[key] = undefined;
-        });
-        return true;
+    if (Object.keys(errors).length === 0) {
+      const cleared = {};
+      Object.keys(initialValues || {}).forEach((key) => {
+        cleared[key] = undefined;
       });
-  }, [initialValues, seterrors, errors]);
+      setErrors(cleared);
+    }
+  }, [initialValues, errors]);
 
   const handleChange = (keyPath) => {
     const keyPaths = keyPath.split('.');
+
     if (keyPaths.length > 1) {
       return (e) => {
-        setValues((d) => {
-          if (
-            e.target.value !== false &&
-            !e.target.value &&
-            e.target.value !== ''
-          ) {
-            delete d[keyPaths[0]][keyPaths[1]]?.[keyPaths[2]]?.[keyPaths[3]]?.[
-              keyPaths[4]
-            ];
+        const newValue = e.target.value;
+        setValues((prev) => {
+          const updated = { ...prev };
+          let ref = updated;
+          for (let i = 0; i < keyPaths.length - 1; i++) {
+            ref[keyPaths[i]] = { ...ref[keyPaths[i]] };
+            ref = ref[keyPaths[i]];
           }
-          if (keyPaths.length === 2) {
-            d[keyPaths[0]][keyPaths[1]] = e.target.value;
-          } else if (keyPaths.length === 3) {
-            d[keyPaths[0]][keyPaths[1]][keyPaths[2]] = e.target.value;
-          } else if (keyPaths.length === 4) {
-            d[keyPaths[0]][keyPaths[1]][keyPaths[2]][keyPaths[3]] =
-              e.target.value;
-          }
+          ref[keyPaths.at(-1)] = newValue;
+          return updated;
         });
-        checkIsPresent(keyPath, e.target.value);
+        checkIsPresent(keyPath, newValue);
       };
     }
+
     return (e) => {
-      setValues((d) => {
-        if (
-          e.target.value !== false &&
-          e.target.value !== '' &&
-          !e.target.value
-        ) {
-          delete d[keyPath];
-        } else {
-          d[keyPath] = e.target.value;
-        }
-      });
-      checkIsPresent(keyPath, e.target.value);
+      const newValue = e.target.value;
+      setValues((prev) => ({
+        ...prev,
+        [keyPath]: newValue,
+      }));
+      checkIsPresent(keyPath, newValue);
     };
   };
 
   const handleSubmit = async (e) => {
-    // e.stopPropagation();
     e.preventDefault();
 
-    if (values instanceof Array) {
-      seterrors({});
+    if (Array.isArray(values)) {
+      setErrors({});
     }
+
     try {
       await validationSchema.validate(values, {
         abortEarly: false,
       });
+
       try {
         const response = await onSubmit(values);
         return response;
@@ -105,17 +87,14 @@ function useForm({ initialValues, validationSchema, onSubmit = (_) => {} }) {
         console.error(err);
         toast.error(err.message);
         return false;
-        // show server error
       }
     } catch (err) {
-      // show field errors
       logger.error(err);
-      err.inner.map((item) => {
-        seterrors((d) => {
-          d[item.path] = item.message;
-        });
-        return true;
+      const fieldErrors = {};
+      err.inner.forEach((item) => {
+        fieldErrors[item.path] = item.message;
       });
+      setErrors(fieldErrors);
       return false;
     }
   };

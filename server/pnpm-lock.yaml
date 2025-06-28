@@ -1,0 +1,104 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      '@kavre/react-useform':
+        specifier: ^1.1.5
+        version: 1.1.5(immer@10.1.1)(react@19.1.0)(yup@1.6.1)
+      immer:
+        specifier: ^10.1.1
+        version: 10.1.1
+      react-useform:
+        specifier: link:@type/@kavre/react-useform
+        version: link:@type/@kavre/react-useform
+      use-immer:
+        specifier: ^0.11.0
+        version: 0.11.0(immer@10.1.1)(react@19.1.0)
+
+packages:
+
+  '@kavre/react-useform@1.1.5':
+    resolution: {integrity: sha512-Ov6YlgiBPS19ldlyjQSJrkjEEIRykPRYdHbcobE5PCNeiFw5hGg51/SLn+/b1DD1lCwLY5sakebzYBfcKSAJ/A==}
+    peerDependencies:
+      react: ^16.8 || ^17.0 || ^18.0
+      yup: ^1.2.0
+
+  immer@10.1.1:
+    resolution: {integrity: sha512-s2MPrmjovJcoMaHtx6K11Ra7oD05NT97w1IC5zpMkT6Atjr7H8LjaDd81iIxUYpMKSRRNMJE703M1Fhr/TctHw==}
+
+  property-expr@2.0.6:
+    resolution: {integrity: sha512-SVtmxhRE/CGkn3eZY1T6pC8Nln6Fr/lu1mKSgRud0eC73whjGfoAogbn78LkD8aFL0zz3bAFerKSnOl7NlErBA==}
+
+  react@19.1.0:
+    resolution: {integrity: sha512-FS+XFBNvn3GTAWq26joslQgWNoFu08F4kl0J4CgdNKADkdSGXQyTCnKteIAJy96Br6YbpEU1LSzV5dYtjMkMDg==}
+    engines: {node: '>=0.10.0'}
+
+  tiny-case@1.0.3:
+    resolution: {integrity: sha512-Eet/eeMhkO6TX8mnUteS9zgPbUMQa4I6Kkp5ORiBD5476/m+PIRiumP5tmh5ioJpH7k51Kehawy2UDfsnxxY8Q==}
+
+  toposort@2.0.2:
+    resolution: {integrity: sha512-0a5EOkAUp8D4moMi2W8ZF8jcga7BgZd91O/yabJCFY8az+XSzeGyTKs0Aoo897iV1Nj6guFq8orWDS96z91oGg==}
+
+  type-fest@2.19.0:
+    resolution: {integrity: sha512-RAH822pAdBgcNMAfWnCBU3CFZcfZ/i1eZjwFU/dsLKumyuuP3niueg2UAukXYF0E2AAoc82ZSSf9J0WQBinzHA==}
+    engines: {node: '>=12.20'}
+
+  use-immer@0.11.0:
+    resolution: {integrity: sha512-RNAqi3GqsWJ4bcCd4LMBgdzvPmTABam24DUaFiKfX9s3MSorNRz9RDZYJkllJoMHUxVLMDetwAuCDeyWNrp1yA==}
+    peerDependencies:
+      immer: '>=8.0.0'
+      react: ^16.8.0 || ^17.0.1 || ^18.0.0 || ^19.0.0
+
+  use-immer@0.9.0:
+    resolution: {integrity: sha512-/L+enLi0nvuZ6j4WlyK0US9/ECUtV5v9RUbtxnn5+WbtaXYUaOBoKHDNL9I5AETdurQ4rIFIj/s+Z5X80ATyKw==}
+    peerDependencies:
+      immer: '>=2.0.0'
+      react: ^16.8.0 || ^17.0.1 || ^18.0.0
+
+  yup@1.6.1:
+    resolution: {integrity: sha512-JED8pB50qbA4FOkDol0bYF/p60qSEDQqBD0/qeIrUCG1KbPBIQ776fCUNb9ldbPcSTxA69g/47XTo4TqWiuXOA==}
+
+snapshots:
+
+  '@kavre/react-useform@1.1.5(immer@10.1.1)(react@19.1.0)(yup@1.6.1)':
+    dependencies:
+      react: 19.1.0
+      use-immer: 0.9.0(immer@10.1.1)(react@19.1.0)
+      yup: 1.6.1
+    transitivePeerDependencies:
+      - immer
+
+  immer@10.1.1: {}
+
+  property-expr@2.0.6: {}
+
+  react@19.1.0: {}
+
+  tiny-case@1.0.3: {}
+
+  toposort@2.0.2: {}
+
+  type-fest@2.19.0: {}
+
+  use-immer@0.11.0(immer@10.1.1)(react@19.1.0):
+    dependencies:
+      immer: 10.1.1
+      react: 19.1.0
+
+  use-immer@0.9.0(immer@10.1.1)(react@19.1.0):
+    dependencies:
+      immer: 10.1.1
+      react: 19.1.0
+
+  yup@1.6.1:
+    dependencies:
+      property-expr: 2.0.6
+      tiny-case: 1.0.3
+      toposort: 2.0.2
+      type-fest: 2.19.0

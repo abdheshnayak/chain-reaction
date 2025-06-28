@@ -32,7 +32,7 @@ const NewStarx = () => {
 
   if (typeof Object.create !== 'function') {
     Object.create = (o) => {
-      function F() {}
+      function F() { }
       F.prototype = o;
       return new F();
     };
@@ -300,7 +300,7 @@ const NewStarx = () => {
   starx.request = (route, msg, cb) => {
     // @ts-ignore
     // eslint-disable-next-line no-undef
-    if (arguments.length === 2 && typeof msg === 'function') {
+    if (typeof msg === 'function') {
       cb = msg;
       msg = {};
     } else {

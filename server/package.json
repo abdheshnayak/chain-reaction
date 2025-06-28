@@ -1,0 +1,8 @@
+{
+	"dependencies": {
+		"@kavre/react-useform": "^1.1.5",
+		"immer": "^10.1.1",
+		"react-useform": "link:@type/@kavre/react-useform",
+		"use-immer": "^0.11.0"
+	}
+}
